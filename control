@@ -1,0 +1,9 @@
+Package: com.PS.cameramodes
+Name: CameraModes
+Conflicts: org.thebigboss.nosquare
+Depends: mobilesubstrate, preferenceloader, firmware (>= 7.0)
+Version: 1.0
+Architecture: iphoneos-arm
+Description: Specific available camera modes.
+Author: PoomSmart
+Section: Tweaks
