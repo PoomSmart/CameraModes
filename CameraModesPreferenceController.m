@@ -193,7 +193,7 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 			UISwitch *toggle = [[UISwitch alloc] initWithFrame:CGRectZero];
 			[toggle addTarget:self action:@selector(toggleSwitch:) forControlEvents:UIControlEventValueChanged];
 			toggle.on = boolValueForKey(@"tweakEnabled", YES);
-			cell.editingAccessoryView = toggle;
+			cell.accessoryView = toggle;
 			[toggle release];
 		}
 		return cell;
@@ -235,6 +235,22 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 	CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), PreferencesNotification, NULL, NULL, YES);
 }
 
+- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath
+{
+	return indexPath.section == 1 || indexPath.section == 2;
+}
+
+- (NSIndexPath *)tableView:(UITableView *)tableView targetIndexPathForMoveFromRowAtIndexPath:(NSIndexPath *)sourceIndexPath toProposedIndexPath:(NSIndexPath *)proposedDestinationIndexPath
+{
+	if (sourceIndexPath.section != proposedDestinationIndexPath.section) {
+		BOOL outside = proposedDestinationIndexPath.section != 1 && proposedDestinationIndexPath.section != 2;
+		BOOL onlyOne = _enabledModes.count == 1 && sourceIndexPath.section == 1;
+		if (outside || onlyOne)
+			return sourceIndexPath;
+	}
+	return proposedDestinationIndexPath;
+}
+
 - (void)tableView:(UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)fromIndexPath toIndexPath:(NSIndexPath *)toIndexPath
 {
 	if (fromIndexPath.row == toIndexPath.row && fromIndexPath.section == toIndexPath.section)
@@ -244,7 +260,7 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
     	[_enabledModes removeObjectAtIndex:fromIndexPath.row];
     	[_enabledModes insertObject:o atIndex:toIndexPath.row];
     }
-    else if (fromIndexPath.section == 2 && toIndexPath.section == 1) {
+    else if (fromIndexPath.section == 2 && toIndexPath.section == 2) {
 		NSObject *o = [_disabledModes[fromIndexPath.row] retain];
     	[_disabledModes removeObjectAtIndex:fromIndexPath.row];
     	[_disabledModes insertObject:o atIndex:toIndexPath.row];
@@ -254,7 +270,7 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
     	[_enabledModes removeObjectAtIndex:fromIndexPath.row];
     	[_disabledModes insertObject:o atIndex:toIndexPath.row];
     }
-    else if (fromIndexPath.section == 1 && toIndexPath.section == 1) {
+    else if (fromIndexPath.section == 2 && toIndexPath.section == 1) {
 		NSObject *o = [_disabledModes[fromIndexPath.row] retain];
     	[_disabledModes removeObjectAtIndex:fromIndexPath.row];
     	[_enabledModes insertObject:o atIndex:toIndexPath.row];
