@@ -13,7 +13,7 @@ BUNDLE_NAME = CameraModesSettings
 CameraModesSettings_FILES = CameraModesPreferenceController.m
 CameraModesSettings_INSTALL_PATH = /Library/PreferenceBundles
 CameraModesSettings_PRIVATE_FRAMEWORKS = Preferences
-CameraModesSettings_FRAMEWORKS = UIKit
+CameraModesSettings_FRAMEWORKS = CoreGraphics UIKit
 
 include $(THEOS_MAKE_PATH)/bundle.mk
 

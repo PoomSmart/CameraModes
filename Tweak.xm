@@ -1,7 +1,4 @@
-#import "../PS.h"
-
-NSString *const PREF_PATH = @"/var/mobile/Library/Preferences/com.PS.CameraModes.plist";
-CFStringRef const PreferencesNotification = CFSTR("com.PS.CameraModes.prefs");
+#import "Common.h"
 
 @interface PLCameraController : NSObject
 + (PLCameraController *)sharedInstance;
@@ -14,12 +11,8 @@ CFStringRef const PreferencesNotification = CFSTR("com.PS.CameraModes.prefs");
 @end
 
 BOOL tweakEnabled;
-BOOL timelapseEnabled;
-BOOL slomoEnabled;
-BOOL videoEnabled;
-BOOL photoEnabled;
-BOOL squareEnabled;
-BOOL panoEnabled;
+
+NSMutableArray *enabledModes;
 
 extern int __UIImagePickerControllerCameraCaptureMode;
 
@@ -30,19 +23,34 @@ static NSMutableArray *modesHook(NSArray *modes)
 	NSMutableArray *newModes = [NSMutableArray arrayWithArray:modes];
 	if (!tweakEnabled)
 		return newModes;
-	if (!timelapseEnabled)
-		[newModes removeObject:@6];
-	if (!slomoEnabled)
-		[newModes removeObject:@2];
-	if (!videoEnabled)
-		[newModes removeObject:@1];
-	if (!photoEnabled)
-		[newModes removeObject:@0];
-	if (!squareEnabled)
-		[newModes removeObject:@4];
-	if (!panoEnabled)
-		[newModes removeObject:@3];
-	//[newModes addObject:@5];
+	NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:PREF_PATH];
+	NSArray *enabledModes = prefs[kEnabledModesKey];
+	NSArray *disabledModes = prefs[kDisabledModesKey];
+	if (enabledModes == nil || disabledModes == nil)
+		return newModes;
+	NSMutableArray *modesToDelete = [NSMutableArray array];
+	for (NSNumber *mode in disabledModes) {
+		if ([newModes containsObject:mode])
+			[modesToDelete addObject:mode];
+	}
+	if (modesToDelete.count > 0) {
+		for (NSNumber *mode in modesToDelete) {
+			[newModes removeObject:mode];
+		}
+	}
+	
+	for (NSUInteger i = 0; i < enabledModes.count; i++) {
+		NSNumber *modeFromPref = enabledModes[i];
+		NSNumber *modeHere = newModes[i];
+		if (modeFromPref.intValue != modeHere.intValue) {
+			for (NSUInteger j = 0; j < newModes.count; j++) {
+				NSNumber *modeHere2 = newModes[j];
+				if (modeHere2.intValue == modeFromPref.intValue)
+					[newModes exchangeObjectAtIndex:i withObjectAtIndex:j];
+			}
+		}
+	}
+	
 	return newModes;
 }
 
@@ -115,12 +123,6 @@ static void reloadSettings(CFNotificationCenterRef center, void *observer, CFStr
 	#define BoolOpt(option) \
 		option = prefs[[NSString stringWithUTF8String:#option]] ? [prefs[[NSString stringWithUTF8String:#option]] boolValue] : YES;
 	BoolOpt(tweakEnabled)
-	BoolOpt(timelapseEnabled)
-	BoolOpt(slomoEnabled)
-	BoolOpt(videoEnabled)
-	BoolOpt(photoEnabled)
-	BoolOpt(squareEnabled)
-	BoolOpt(panoEnabled)
 }
 
 %ctor
