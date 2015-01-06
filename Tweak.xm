@@ -24,34 +24,8 @@ static NSMutableArray *modesHook(NSArray *modes)
 	if (!tweakEnabled)
 		return newModes;
 	NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:PREF_PATH];
-	NSArray *enabledModes = prefs[kEnabledModesKey];
-	NSArray *disabledModes = prefs[kDisabledModesKey];
-	if (enabledModes == nil || disabledModes == nil)
-		return newModes;
-	NSMutableArray *modesToDelete = [NSMutableArray array];
-	for (NSNumber *mode in disabledModes) {
-		if ([newModes containsObject:mode])
-			[modesToDelete addObject:mode];
-	}
-	if (modesToDelete.count > 0) {
-		for (NSNumber *mode in modesToDelete) {
-			[newModes removeObject:mode];
-		}
-	}
-	
-	for (NSUInteger i = 0; i < enabledModes.count; i++) {
-		NSNumber *modeFromPref = enabledModes[i];
-		NSNumber *modeHere = newModes[i];
-		if (modeFromPref.intValue != modeHere.intValue) {
-			for (NSUInteger j = 0; j < newModes.count; j++) {
-				NSNumber *modeHere2 = newModes[j];
-				if (modeHere2.intValue == modeFromPref.intValue)
-					[newModes exchangeObjectAtIndex:i withObjectAtIndex:j];
-			}
-		}
-	}
-	
-	return newModes;
+	NSMutableArray *enabledModes = [NSMutableArray arrayWithArray:prefs[kEnabledModesKey]];
+	return enabledModes != nil ? enabledModes : newModes;
 }
 
 static int effectiveCameraMode(NSMutableArray *modes, int origMode)

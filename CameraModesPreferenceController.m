@@ -219,9 +219,9 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 - (void)viewDidLoad
 {
 	[super viewDidLoad];
-	[self.tableView setAllowsSelectionDuringEditing:YES];
+	self.tableView.allowsSelectionDuringEditing = YES;
+	self.tableView.editing = YES;
 	[self.tableView registerClass:[UITableViewCell class] forCellReuseIdentifier:@"CameraModesCell"];
-	[self.tableView setEditing:YES];
 }
 
 - (void)saveSettings
@@ -276,6 +276,11 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
     	[_enabledModes insertObject:o atIndex:toIndexPath.row];
     }
 	[self saveSettings];
+}
+
+- (id)table
+{
+	return nil;
 }
 
 - (UITableView *)tableView
