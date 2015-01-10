@@ -25,12 +25,15 @@ static NSMutableArray *modesHook(NSArray *modes)
 		return newModes;
 	NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:PREF_PATH];
 	NSMutableArray *enabledModes = [NSMutableArray arrayWithArray:prefs[kEnabledModesKey]];
-	return enabledModes != nil ? enabledModes : newModes;
+	BOOL shouldUse = enabledModes.count > 0;
+	return shouldUse ? enabledModes : newModes;
 }
 
 static int effectiveCameraMode(NSMutableArray *modes, int origMode)
 {
-	if (modes == nil || [modes containsObject:@(origMode)])
+	if (modes == nil || modes.count == 0)
+		return origMode;
+	if ([modes containsObject:@(origMode)])
 		return origMode;
 	NSCAssert(modes.count != 0, @"There is no available camera modes.");
 	return ((NSNumber *)modes[0]).intValue;
