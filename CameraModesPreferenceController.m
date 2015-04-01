@@ -322,7 +322,7 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 							[NSMutableOrderedSet orderedSetWithArray:[NSArray array]];
 
 		if(dlopen("/Library/MobileSubstrate/DynamicLibraries/QRMode.dylib", RTLD_LAZY)){
-			a//fix QRMode not appearing for users who updated from a previous version of CameraModes
+			//fix QRMode not appearing for users who updated from a previous version of CameraModes
 			if(!([_enabledModes containsObject:@(cameraModeBW)] || [_disabledModes containsObject:@(cameraModeBW)]))
 				[_enabledModes addObject:@(cameraModeBW)];
 		}else{
