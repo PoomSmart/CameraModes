@@ -2,6 +2,7 @@
 #import <dlfcn.h>
 
 BOOL tweakEnabled;
+BOOL QRModeEnabled;
 
 NSMutableArray *enabledModes;
 
@@ -28,6 +29,7 @@ static NSMutableArray *modesHook(NSArray *modes)
 	if(![modes containsObject:@(cameraModeBW)]){
 		[enabledModes removeObject:@(cameraModeBW)];
 	}
+
 
 	BOOL shouldUse = enabledModes.count > 0;
 	return shouldUse ? enabledModes : newModes;

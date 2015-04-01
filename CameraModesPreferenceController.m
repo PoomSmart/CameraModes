@@ -194,9 +194,15 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 			return @"Panorama";
 		case cameraModeSquare:
 			return @"Square";
+<<<<<<< HEAD
 		case cameraModeBW:
 			return [self nameForModeFive];
 		case cameraModeTimeLapse:
+=======
+		case 5:
+			return [self nameForModeFive];
+		case 6:
+>>>>>>> upstream/master
 			return @"Time-Lapse";
 	}
 	return nil;
