@@ -60,14 +60,16 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 {
 	NSMutableArray *array = [NSMutableArray array];
 	if (isiOS8Up)
-		[array addObject:@6];
+		[array addObject:@(cameraModeTimeLapse)];
 	if (dlopen("/Library/MobileSubstrate/DynamicLibraries/SlalomEnabler.dylib", RTLD_LAZY) || hasSlomo())
-		[array addObject:@2];
-	[array addObject:@1];
-	[array addObject:@0];
-	[array addObject:@4];
+		[array addObject:@(cameraaModeSalom)];
+	[array addObject:@(cameraModeVideo)];
+	[array addObject:@(cameraModePhoto)];
+	[array addObject:@(cameraModeSquare)];
 	if (dlopen("/Library/MobileSubstrate/DynamicLibraries/PanoHook.dylib", RTLD_LAZY) || hasPano())
-		[array addObject:@3];
+		[array addObject:@(cameraModePano)];
+	if (dlopen("/Library/MobileSubstrate/DynamicLibraries/QRMode.dylib", RTLD_LAZY))
+		[array addObject:@(cameraModeBW)];
 	return array;
 }
 
@@ -154,17 +156,19 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 {
 	NSInteger mode = number.intValue;
 	switch (mode) {
-		case 0:
+		case cameraModePhoto:
 			return @"Photo";
-		case 1:
+		case cameraModeVideo:
 			return @"Video";
-		case 2:
+		case cameraaModeSalom:
 			return @"Slo-mo";
-		case 3:
+		case cameraModePano:
 			return @"Panorama";
-		case 4:
+		case cameraModeSquare:
 			return @"Square";
-		case 6:
+		case cameraModeBW:
+			return @"QRMode";
+		case cameraModeTimeLapse:
 			return @"Time-Lapse";
 	}
 	return nil;
@@ -188,7 +192,10 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 	if (section == 0) {
 		cell = [tableView dequeueReusableCellWithIdentifier:@"SwitchCell"];
 		if (cell == nil) {
+			#pragma GCC diagnostic push
+			#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 			cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:@"SwitchCell"] autorelease];
+			#pragma GCC diagnostic pop
 			cell.textLabel.text = @"Enable Tweak";
 			UISwitch *toggle = [[UISwitch alloc] initWithFrame:CGRectZero];
 			[toggle addTarget:self action:@selector(toggleSwitch:) forControlEvents:UIControlEventValueChanged];
@@ -200,7 +207,10 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 	}
 	cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier];
 	if (cell == nil) {
+		#pragma GCC diagnostic push
+		#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 		cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:CellIdentifier] autorelease];
+					#pragma GCC diagnostic pop#pragma GCC diagnostic pop
 		cell.textLabel.numberOfLines = 1;
 		cell.textLabel.backgroundColor = [UIColor clearColor];
 		cell.textLabel.textColor = [UIColor blackColor];
@@ -303,13 +313,23 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 	self = [super init];
 	if (self) {
 		NSDictionary *prefDict = [NSDictionary dictionaryWithContentsOfFile:PREF_PATH];
-		
+
 		_enabledModes = prefDict[kEnabledModesKey] != nil ?
 							[NSMutableOrderedSet orderedSetWithArray:prefDict[kEnabledModesKey]] :
 							[NSMutableOrderedSet orderedSetWithArray:[self defaultCameraModes]];
 		_disabledModes = prefDict[kDisabledModesKey] != nil ?
 							[NSMutableOrderedSet orderedSetWithArray:prefDict[kDisabledModesKey]] :
 							[NSMutableOrderedSet orderedSetWithArray:[NSArray array]];
+
+		if(dlopen("/Library/MobileSubstrate/DynamicLibraries/QRMode.dylib", RTLD_LAZY)){
+			a//fix QRMode not appearing for users who updated from a previous version of CameraModes
+			if(!([_enabledModes containsObject:@(cameraModeBW)] || [_disabledModes containsObject:@(cameraModeBW)]))
+				[_enabledModes addObject:@(cameraModeBW)];
+		}else{
+			//remove it if qrmode was uninstalled
+			[_enabledModes removeObject:@(cameraModeBW)];
+			[_disabledModes removeObject:@(cameraModeBW)];
+		}
 
 		[self saveSettings];
 		[[NSUserDefaults standardUserDefaults] synchronize];

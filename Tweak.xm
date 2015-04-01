@@ -1,4 +1,5 @@
 #import "Common.h"
+#import <dlfcn.h>
 
 @interface PLCameraController : NSObject
 + (PLCameraController *)sharedInstance;
@@ -25,6 +26,12 @@ static NSMutableArray *modesHook(NSArray *modes)
 		return newModes;
 	NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:PREF_PATH];
 	NSMutableArray *enabledModes = [NSMutableArray arrayWithArray:prefs[kEnabledModesKey]];
+
+	//QRMode compatiblity - remove QRMode mode if QRMode is not installed anymore and/or not enabled
+	if(![modes containsObject:@(cameraModeBW)]){
+		[enabledModes removeObject:@(cameraModeBW)];
+	}
+
 	BOOL shouldUse = enabledModes.count > 0;
 	return shouldUse ? enabledModes : newModes;
 }
