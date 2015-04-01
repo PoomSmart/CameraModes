@@ -1,4 +1,5 @@
 #import "Common.h"
+#import <dlfcn.h>
 
 BOOL tweakEnabled;
 BOOL QRModeEnabled;
@@ -23,7 +24,13 @@ static NSMutableArray *modesHook(NSArray *modes)
 		return newModes;
 	NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:PREF_PATH];
 	NSMutableArray *enabledModes = [NSMutableArray arrayWithArray:prefs[kEnabledModesKey]];
-	//[enabledModes removeObject:@5];
+
+	//QRMode compatiblity - remove QRMode mode if QRMode is not installed anymore and/or not enabled
+	if(![modes containsObject:@(cameraModeBW)]){
+		[enabledModes removeObject:@(cameraModeBW)];
+	}
+
+
 	BOOL shouldUse = enabledModes.count > 0;
 	return shouldUse ? enabledModes : newModes;
 }
@@ -34,7 +41,7 @@ static NSInteger effectiveCameraMode(NSMutableArray *modes, NSInteger origMode)
 		return origMode;
 	if ([modes containsObject:@(origMode)])
 		return origMode;
-	NSCAssert(modes.count != 0, @"There is no available camera modes.");
+	NSCAssert(modes.count != 0, @"There is no available camera mode.");
 	return ((NSNumber *)modes[0]).intValue;
 }
 
@@ -144,9 +151,9 @@ static void reloadSettings(CFNotificationCenterRef center, void *observer, CFStr
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 	CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &reloadSettings, PreferencesNotification, NULL, CFNotificationSuspensionBehaviorCoalesce);
 	reloadSettings(NULL, NULL, NULL, NULL, NULL);
-	QRModeEnabled = [[NSFileManager defaultManager] fileExistsAtPath:@"/Library/MobileSubstrate/DynamicLibraries/QRMode.dylib"];
+	//QRModeInstalled = [[NSFileManager defaultManager] fileExistsAtPath:@"/Library/MobileSubstrate/DynamicLibraries/QRMode.dylib"];
 	if (isiOS8Up) {
-		dlopen("/Library/MobileSubstrate/DynamicLibraries/QRMode.dylib", RTLD_LAZY);
+		//dlopen("/Library/MobileSubstrate/DynamicLibraries/QRMode.dylib", RTLD_LAZY);
 		%init(iOS8);
 	} else {
 		%init(iOS7);
