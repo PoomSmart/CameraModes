@@ -2,6 +2,7 @@
 #import <UIKit/UIKit.h>
 #import <Preferences/PSListController.h>
 #import <Preferences/PSSpecifier.h>
+#import <Social/Social.h>
 #import <dlfcn.h>
 
 @interface PSViewController ()
@@ -19,8 +20,11 @@
 @property (nonatomic, retain) PSSpecifier *photoSpec;
 @property (nonatomic, retain) PSSpecifier *squareSpec;
 @property (nonatomic, retain) PSSpecifier *panoSpec;
+@property (nonatomic, retain) PSSpecifier *modeFiveSpec;
 - (UITableView *)tableView;
 @end
+
+#define RowHeight 44.0f
 
 static BOOL (*MGGetBoolAnswer)(CFStringRef capability);
 
@@ -38,12 +42,29 @@ static BOOL hasCapability(CFStringRef capability)
 
 static BOOL hasSlomo()
 {
-	return hasCapability(CFSTR("RearFacingCameraHFRCapability"));
+	BOOL hasSlomoTweak;
+	void *open = dlopen("/Library/MobileSubstrate/DynamicLibraries/SlalomEnabler.dylib", RTLD_LAZY);
+	hasSlomoTweak = open != NULL;
+	dlclose(open);
+	return hasSlomoTweak || hasCapability(CFSTR("RearFacingCameraHFRCapability"));
 }
 
 static BOOL hasPano()
 {
-	return hasCapability(CFSTR("PanoramaCameraCapability"));
+	BOOL hasPanoTweak;
+	void *open = dlopen("/Library/MobileSubstrate/DynamicLibraries/PanoHook.dylib", RTLD_LAZY);
+	hasPanoTweak = open != NULL;
+	dlclose(open);
+	return hasPanoTweak || hasCapability(CFSTR("PanoramaCameraCapability"));
+}
+
+static BOOL hasQRModeTweak()
+{
+	BOOL hasQRMode;
+	void *open = dlopen("/Library/MobileSubstrate/DynamicLibraries/QRMode.dylib", RTLD_LAZY);
+	hasQRMode = open != NULL;
+	dlclose(open);
+	return hasQRMode;
 }
 
 static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
@@ -52,8 +73,6 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 	return pref[key] ? [pref[key] boolValue] : defaultValue;
 }
 
-#define RowHeight 44
-
 @implementation CameraModesPreferenceController
 
 - (NSMutableArray *)defaultCameraModes
@@ -61,14 +80,14 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 	NSMutableArray *array = [NSMutableArray array];
 	if (isiOS8Up)
 		[array addObject:@(cameraModeTimeLapse)];
-	if (dlopen("/Library/MobileSubstrate/DynamicLibraries/SlalomEnabler.dylib", RTLD_LAZY) || hasSlomo())
+	if (hasSlomo())
 		[array addObject:@(cameraaModeSalom)];
 	[array addObject:@(cameraModeVideo)];
 	[array addObject:@(cameraModePhoto)];
 	[array addObject:@(cameraModeSquare)];
-	if (dlopen("/Library/MobileSubstrate/DynamicLibraries/PanoHook.dylib", RTLD_LAZY) || hasPano())
+	if (hasPano())
 		[array addObject:@(cameraModePano)];
-	if (dlopen("/Library/MobileSubstrate/DynamicLibraries/QRMode.dylib", RTLD_LAZY))
+	if (hasQRModeTweak())
 		[array addObject:@(cameraModeBW)];
 	return array;
 }
@@ -90,7 +109,7 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)table
 {
-	return 3;
+	return 4;
 }
 
 - (NSString *)tableView:(UITableView *)table titleForHeaderInSection:(NSInteger)section
@@ -104,7 +123,7 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 
 - (BOOL)tableView:(UITableView *)view shouldHighlightRowAtIndexPath:(NSIndexPath *)indexPath
 {
-	return NO;
+	return indexPath.section == 3;
 }
 
 - (BOOL)tableView:(UITableView *)view shouldIndentWhileEditingRowAtIndexPath:(NSIndexPath *)indexPath
@@ -121,7 +140,9 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 
 		UILabel *lbl2 = [[UILabel alloc] initWithFrame:footer2.frame];
 		lbl2.backgroundColor = [UIColor clearColor];
-		lbl2.text = @"© 2013 - 2014 Thatchapon Unprasert\n(@PoomSmart)";
+		lbl2.font = [UIFont systemFontOfSize:14.0f];
+		lbl2.textColor = [UIColor grayColor];
+		lbl2.text = @"© 2013 - 2015 Thatchapon Unprasert\n(@PoomSmart)";
 		lbl2.textAlignment = NSTextAlignmentCenter;
 		lbl2.lineBreakMode = NSLineBreakByWordWrapping;
 		lbl2.numberOfLines = 2;
@@ -152,6 +173,13 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 	return 1;
 }
 
+- (NSString *)nameForModeFive
+{
+	if (hasQRModeTweak())
+		return @"QR Mode";
+	return @"Mode 5";
+}
+
 - (NSString *)ModeStringFromCameraMode:(NSNumber *)number
 {
 	NSInteger mode = number.intValue;
@@ -167,7 +195,7 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 		case cameraModeSquare:
 			return @"Square";
 		case cameraModeBW:
-			return @"QRMode";
+			return [self nameForModeFive];
 		case cameraModeTimeLapse:
 			return @"Time-Lapse";
 	}
@@ -176,9 +204,8 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 
 - (void)toggleSwitch:(UISwitch *)sender
 {
-	NSMutableDictionary *prefDict = [[NSDictionary dictionaryWithContentsOfFile:PREF_PATH] mutableCopy];
-	if (prefDict == nil)
-		prefDict = [NSMutableDictionary dictionary];
+	NSMutableDictionary *prefDict = [NSMutableDictionary dictionary];
+	[prefDict addEntriesFromDictionary:[NSDictionary dictionaryWithContentsOfFile:PREF_PATH]];
 	prefDict[@"tweakEnabled"] = @(sender.on);
 	[prefDict.copy writeToFile:PREF_PATH atomically:YES];
 	CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), PreferencesNotification, NULL, NULL, YES);
@@ -205,12 +232,25 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 		}
 		return cell;
 	}
+	else if (section == 3) {
+		cell = [tableView dequeueReusableCellWithIdentifier:@"ResetCell"];
+		if (cell == nil) {
+			#pragma GCC diagnostic push
+			#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+			cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:@"ResetCell"] autorelease];
+			#pragma GCC diagnostic pop
+			cell.textLabel.text = @"Reset modes";
+			cell.textLabel.textColor = [UIColor systemBlueColor];
+			cell.textLabel.textAlignment = NSTextAlignmentCenter;
+		}
+		return cell;
+	}
 	cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier];
 	if (cell == nil) {
 		#pragma GCC diagnostic push
 		#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 		cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:CellIdentifier] autorelease];
-					#pragma GCC diagnostic pop#pragma GCC diagnostic pop
+		#pragma GCC diagnostic pop
 		cell.textLabel.numberOfLines = 1;
 		cell.textLabel.backgroundColor = [UIColor clearColor];
 		cell.textLabel.textColor = [UIColor blackColor];
@@ -234,11 +274,30 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 	[self.tableView registerClass:[UITableViewCell class] forCellReuseIdentifier:@"CameraModesCell"];
 }
 
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+	[tableView deselectRowAtIndexPath:indexPath animated:YES];
+	if (indexPath.section == 3)
+		[self resetCameraModes];
+}
+
+- (void)resetCameraModes
+{
+	_enabledModes = [NSMutableOrderedSet orderedSetWithArray:[self defaultCameraModes]];
+	_disabledModes = [NSMutableOrderedSet orderedSetWithArray:[NSArray array]];
+	[self saveSettings];
+	[[NSUserDefaults standardUserDefaults] synchronize];
+	[self.tableView reloadData];
+}
+
 - (void)saveSettings
 {
-	NSMutableDictionary *prefDict = [[NSDictionary dictionaryWithContentsOfFile:PREF_PATH] mutableCopy];
-	if (prefDict == nil)
-		prefDict = [NSMutableDictionary dictionary];
+	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+	system("killall Camera");
+	#pragma GCC diagnostic pop
+	NSMutableDictionary *prefDict = [NSMutableDictionary dictionary];
+	[prefDict addEntriesFromDictionary:[NSDictionary dictionaryWithContentsOfFile:PREF_PATH]];
 	prefDict[kEnabledModesKey] = _enabledModes.array;
 	prefDict[kDisabledModesKey] = _disabledModes.array;
 	[prefDict.copy writeToFile:PREF_PATH atomically:YES];
@@ -308,12 +367,25 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 	[tableView release];
 }
 
+- (void)love
+{
+	SLComposeViewController *twitter = [[SLComposeViewController composeViewControllerForServiceType:SLServiceTypeTwitter] retain];
+	[twitter setInitialText:@"#CameraModes by @PoomSmart is awesome!"];
+	if (twitter != nil)
+		[[self navigationController] presentViewController:twitter animated:YES completion:nil];
+	[twitter release];
+}
+
 - (instancetype)init
 {
 	self = [super init];
 	if (self) {
+		UIButton *heart = [[[UIButton alloc] initWithFrame:CGRectZero] autorelease];
+		//[heart setImage:[UIImage imageNamed:@"Heart" inBundle:[NSBundle bundleWithPath:@"/Library/PreferenceBundles/CameraModesSettings.bundle"]] forState:UIControlStateNormal];
+		[heart sizeToFit];
+		[heart addTarget:self action:@selector(love) forControlEvents:UIControlEventTouchUpInside];
+		self.navigationItem.rightBarButtonItem = [[[UIBarButtonItem alloc] initWithCustomView:heart] autorelease];
 		NSDictionary *prefDict = [NSDictionary dictionaryWithContentsOfFile:PREF_PATH];
-
 		_enabledModes = prefDict[kEnabledModesKey] != nil ?
 							[NSMutableOrderedSet orderedSetWithArray:prefDict[kEnabledModesKey]] :
 							[NSMutableOrderedSet orderedSetWithArray:[self defaultCameraModes]];
@@ -321,7 +393,7 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 							[NSMutableOrderedSet orderedSetWithArray:prefDict[kDisabledModesKey]] :
 							[NSMutableOrderedSet orderedSetWithArray:[NSArray array]];
 
-		if(dlopen("/Library/MobileSubstrate/DynamicLibraries/QRMode.dylib", RTLD_LAZY)){
+		if(hasQRModeTweak){
 			//fix QRMode not appearing for users who updated from a previous version of CameraModes
 			if(!([_enabledModes containsObject:@(cameraModeBW)] || [_disabledModes containsObject:@(cameraModeBW)]))
 				[_enabledModes addObject:@(cameraModeBW)];
