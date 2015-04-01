@@ -81,7 +81,7 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 	if (isiOS8Up)
 		[array addObject:@(cameraModeTimeLapse)];
 	if (hasSlomo())
-		[array addObject:@(cameraaModeSalom)];
+		[array addObject:@(cameraModeSlalom)];
 	[array addObject:@(cameraModeVideo)];
 	[array addObject:@(cameraModePhoto)];
 	[array addObject:@(cameraModeSquare)];
@@ -182,13 +182,13 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 
 - (NSString *)ModeStringFromCameraMode:(NSNumber *)number
 {
-	NSInteger mode = number.intValue;
+	NSInteger mode = number.integerValue;
 	switch (mode) {
 		case cameraModePhoto:
 			return @"Photo";
 		case cameraModeVideo:
 			return @"Video";
-		case cameraaModeSalom:
+		case cameraModeSlalom:
 			return @"Slo-mo";
 		case cameraModePano:
 			return @"Panorama";
@@ -393,12 +393,12 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 							[NSMutableOrderedSet orderedSetWithArray:prefDict[kDisabledModesKey]] :
 							[NSMutableOrderedSet orderedSetWithArray:[NSArray array]];
 
-		if(hasQRModeTweak){
-			//fix QRMode not appearing for users who updated from a previous version of CameraModes
-			if(!([_enabledModes containsObject:@(cameraModeBW)] || [_disabledModes containsObject:@(cameraModeBW)]))
+		if (hasQRModeTweak) {
+			// fix QRMode not appearing for users who updated from a previous version of CameraModes
+			if (!([_enabledModes containsObject:@(cameraModeBW)] || [_disabledModes containsObject:@(cameraModeBW)]))
 				[_enabledModes addObject:@(cameraModeBW)];
-		}else{
-			//remove it if qrmode was uninstalled
+		} else {
+			// remove it if qrmode was uninstalled
 			[_enabledModes removeObject:@(cameraModeBW)];
 			[_disabledModes removeObject:@(cameraModeBW)];
 		}

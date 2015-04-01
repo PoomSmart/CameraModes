@@ -7,13 +7,13 @@ CFStringRef const PreferencesNotification = CFSTR("com.PS.CameraModes.prefs");
 NSString *const kEnabledModesKey = @"EnabledModes";
 NSString *const kDisabledModesKey = @"DisabledModes";
 
-//camera
+// camera modes
 typedef NS_ENUM(NSInteger, cameraMode) {
-  cameraModePhoto,
-  cameraModeVideo,
-  cameraaModeSalom,
-  cameraModePano,
-  cameraModeSquare,
-  cameraModeBW,
-  cameraModeTimeLapse
+	cameraModePhoto,
+	cameraModeVideo,
+	cameraModeSlalom,
+	cameraModePano,
+	cameraModeSquare,
+	cameraModeBW,
+	cameraModeTimeLapse
 };
