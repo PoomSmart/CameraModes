@@ -381,7 +381,7 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 	self = [super init];
 	if (self) {
 		UIButton *heart = [[[UIButton alloc] initWithFrame:CGRectZero] autorelease];
-		//[heart setImage:[UIImage imageNamed:@"Heart" inBundle:[NSBundle bundleWithPath:@"/Library/PreferenceBundles/CameraModesSettings.bundle"]] forState:UIControlStateNormal];
+		[heart setImage:[UIImage imageNamed:@"Heart" inBundle:[NSBundle bundleWithPath:@"/Library/PreferenceBundles/CameraModesSettings.bundle"]] forState:UIControlStateNormal];
 		[heart sizeToFit];
 		[heart addTarget:self action:@selector(love) forControlEvents:UIControlEventTouchUpInside];
 		self.navigationItem.rightBarButtonItem = [[[UIBarButtonItem alloc] initWithCustomView:heart] autorelease];
