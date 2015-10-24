@@ -1,11 +1,9 @@
 #import "../PS.h"
 
-
-
-NSString *const PREF_PATH = @"/var/mobile/Library/Preferences/com.PS.CameraModes.plist";
-CFStringRef const PreferencesNotification = CFSTR("com.PS.CameraModes.prefs");
-NSString *const kEnabledModesKey = @"EnabledModes";
-NSString *const kDisabledModesKey = @"DisabledModes";
+NSString *PREF_PATH = @"/var/mobile/Library/Preferences/com.PS.CameraModes.plist";
+CFStringRef PreferencesNotification = CFSTR("com.PS.CameraModes.prefs");
+NSString *kEnabledModesKey = @"EnabledModes";
+NSString *kDisabledModesKey = @"DisabledModes";
 
 // camera modes
 typedef NS_ENUM(NSInteger, cameraMode) {

@@ -26,18 +26,10 @@
 
 #define RowHeight 44.0f
 
-static BOOL (*MGGetBoolAnswer)(CFStringRef capability);
-
+extern BOOL MGGetBoolAnswer(CFStringRef);
 static BOOL hasCapability(CFStringRef capability)
 {
-	if (!MGGetBoolAnswer) {
-		void *libMobileGestalt = dlopen("/usr/lib/libMobileGestalt.dylib", RTLD_LAZY);
-		if (libMobileGestalt)
-			MGGetBoolAnswer = dlsym(libMobileGestalt, "MGGetBoolAnswer");
-	}
-	if (MGGetBoolAnswer != NULL)
-		return MGGetBoolAnswer(capability);
-	return NO;
+	return MGGetBoolAnswer(capability);
 }
 
 static BOOL hasSlomo()
@@ -180,24 +172,47 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 	return @"Mode 5";
 }
 
+- (NSBundle *)cameraBundle
+{
+	static NSBundle *bundle = nil;
+	static dispatch_once_t onceToken;
+	dispatch_once(&onceToken, ^{
+		if (isiOS8Up)
+			dlopen("/System/Library/PrivateFrameworks/CameraKit.framework/CameraKit", RTLD_LAZY);
+		else
+			dlopen("/System/Library/PrivateFrameworks/PhotoLibrary.framework/PhotoLibrary", RTLD_LAZY);
+		bundle = [NSBundle bundleWithPath:@"/System/Library/PrivateFrameworks/CameraKit.framework"];
+		if (bundle == nil)
+			bundle = [NSBundle bundleWithPath:@"/System/Library/PrivateFrameworks/PhotoLibrary.framework"];
+	});
+	return bundle;
+}
+
+- (NSString *)localizedStringForKey:(NSString *)key
+{
+	NSString *table = isiOS8Up ? @"CameraKit" : ([key isEqualToString:@"SLALOM"] ? @"PhotoLibrary-Avalanche" : @"PhotoLibrary");
+	NSString *string = [self.cameraBundle localizedStringForKey:key value:@"" table:table];
+	return [string capitalizedString];
+}
+
 - (NSString *)ModeStringFromCameraMode:(NSNumber *)number
 {
 	NSInteger mode = number.integerValue;
 	switch (mode) {
 		case cameraModePhoto:
-			return @"Photo";
+			return [self localizedStringForKey:@"PHOTO"];
 		case cameraModeVideo:
-			return @"Video";
+			return [self localizedStringForKey:@"VIDEO"];
 		case cameraModeSlalom:
-			return @"Slo-mo";
+			return [self localizedStringForKey:@"SLALOM"];
 		case cameraModePano:
-			return @"Panorama";
+			return [self localizedStringForKey:@"PANO"];
 		case cameraModeSquare:
-			return @"Square";
+			return [self localizedStringForKey:@"SQUARE"];
 		case cameraModeBW:
 			return [self nameForModeFive];
 		case cameraModeTimeLapse:
-			return @"Time-Lapse";
+			return [self localizedStringForKey:@"TIMELAPSE"];
 	}
 	return nil;
 }
@@ -393,7 +408,7 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 							[NSMutableOrderedSet orderedSetWithArray:prefDict[kDisabledModesKey]] :
 							[NSMutableOrderedSet orderedSetWithArray:[NSArray array]];
 
-		if (hasQRModeTweak) {
+		if (hasQRModeTweak()) {
 			// fix QRMode not appearing for users who updated from a previous version of CameraModes
 			if (!([_enabledModes containsObject:@(cameraModeBW)] || [_disabledModes containsObject:@(cameraModeBW)]))
 				[_enabledModes addObject:@(cameraModeBW)];

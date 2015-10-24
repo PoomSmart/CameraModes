@@ -1,5 +1,4 @@
 #import "Common.h"
-#import <dlfcn.h>
 
 BOOL tweakEnabled;
 BOOL QRModeEnabled;
@@ -30,17 +29,39 @@ static NSMutableArray *modesHook(NSArray *modes)
 		[enabledModes removeObject:@(cameraModeBW)];
 
 	BOOL shouldUse = enabledModes.count > 0;
+	//NSLog(@"%@", enabledModes);
 	return shouldUse ? enabledModes : newModes;
 }
 
-static NSInteger effectiveCameraMode(NSMutableArray *modes, NSInteger origMode)
+static NSObject <cameraControllerDelegate> *cameraInstance()
 {
+	if (%c(CMKCaptureController))
+		return (CMKCaptureController *)[%c(CMKCaptureController) sharedInstance];
+	else if (%c(CAMCaptureController))
+		return (CAMCaptureController *)[%c(CAMCaptureController) sharedInstance];
+	return (PLCameraController *)[%c(PLCameraController) sharedInstance];
+}
+
+static NSInteger effectiveCameraMode(NSInteger origMode)
+{
+	NSMutableArray *modes = [cameraInstance() supportedCameraModes];
 	if (modes.count == 0)
 		return origMode;
 	if ([modes containsObject:@(origMode)])
 		return origMode;
 	NSCAssert(modes.count != 0, @"There is no available camera mode.");
-	return ((NSNumber *)modes[0]).intValue;
+	return ((NSNumber *)modes[0]).integerValue;
+}
+
+static NSInteger effectiveCameraMode2(CAMViewfinderViewController *controller, NSInteger origMode)
+{
+	NSMutableArray *modes = [controller modesForModeDial:nil];
+	if (modes.count == 0)
+		return origMode;
+	if ([modes containsObject:@(origMode)])
+		return origMode;
+	NSCAssert(modes.count != 0, @"There is no available camera mode.");
+	return ((NSNumber *)modes[0]).integerValue;
 }
 
 %group iOS7
@@ -54,7 +75,7 @@ static NSInteger effectiveCameraMode(NSMutableArray *modes, NSInteger origMode)
 
 - (void)_setCameraMode:(NSInteger)mode cameraDevice:(NSInteger)device
 {
-	%orig(effectiveCameraMode([self supportedCameraModes], mode), device);
+	%orig(effectiveCameraMode(mode), device);
 }
 
 %end
@@ -63,7 +84,7 @@ static NSInteger effectiveCameraMode(NSMutableArray *modes, NSInteger origMode)
 
 - (void)setCameraMode:(NSInteger)mode
 {
-	%orig(effectiveCameraMode([(PLCameraController *)[objc_getClass("PLCameraController") sharedInstance] supportedCameraModes], mode));
+	%orig(effectiveCameraMode(mode));
 }
 
 %end
@@ -81,7 +102,7 @@ static NSInteger effectiveCameraMode(NSMutableArray *modes, NSInteger origMode)
 
 - (void)_setCameraMode:(NSInteger)mode cameraDevice:(NSInteger)device forceConfigure:(BOOL)force
 {
-	%orig(effectiveCameraMode([self supportedCameraModes], mode), device, force);
+	%orig(effectiveCameraMode(mode), device, force);
 }
 
 %end
@@ -90,8 +111,27 @@ static NSInteger effectiveCameraMode(NSMutableArray *modes, NSInteger origMode)
 
 - (void)setCameraMode:(NSInteger)mode
 {
-	NSInteger effectiveMode = effectiveCameraMode([(CAMCaptureController *)[objc_getClass("CAMCaptureController") sharedInstance] supportedCameraModes], mode);
+	NSInteger effectiveMode = effectiveCameraMode(mode);
 	%orig(effectiveMode);
+}
+
+%end
+
+%end
+
+%group iOS9
+
+%hook CAMViewfinderViewController
+
+- (NSMutableArray *)modesForModeDial:(id)arg1
+{
+	return modesHook(%orig);
+}
+
+- (void)changeToMode:(NSInteger)mode device:(NSInteger)device animated:(BOOL)animated
+{
+	NSInteger effectiveMode = effectiveCameraMode2(self, mode);
+	%orig(effectiveMode, device, animated);
 }
 
 %end
@@ -102,18 +142,19 @@ static void reloadSettings(CFNotificationCenterRef center, void *observer, CFStr
 {
 	CFPreferencesAppSynchronize(CFSTR("com.PS.CameraModes"));
 	NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:PREF_PATH];
-	tweakEnabled = prefs[@"tweakEnabled"] ? [prefs[@"tweakEnabled"] boolValue] : YES;
+	id val = prefs[@"tweakEnabled"];
+	tweakEnabled = val ? [val boolValue] : YES;
 }
 
 %ctor
 {
-	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 	CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &reloadSettings, PreferencesNotification, NULL, CFNotificationSuspensionBehaviorCoalesce);
 	reloadSettings(NULL, NULL, NULL, NULL, NULL);
-	if (isiOS8Up) {
+	if (isiOS9Up) {
+		%init(iOS9);
+	} else if (isiOS8) {
 		%init(iOS8);
 	} else {
 		%init(iOS7);
 	}
-  	[pool drain];
 }
