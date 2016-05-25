@@ -34,7 +34,7 @@ static BOOL hasCapability(CFStringRef capability)
 
 static BOOL hasSlomo()
 {
-	BOOL hasSlomoTweak;
+	BOOL hasSlomoTweak = NO;
 	void *open = dlopen("/Library/MobileSubstrate/DynamicLibraries/SlalomEnabler.dylib", RTLD_LAZY);
 	hasSlomoTweak = open != NULL;
 	dlclose(open);
@@ -43,7 +43,7 @@ static BOOL hasSlomo()
 
 static BOOL hasPano()
 {
-	BOOL hasPanoTweak;
+	BOOL hasPanoTweak = NO;
 	void *open = dlopen("/Library/MobileSubstrate/DynamicLibraries/PanoHook.dylib", RTLD_LAZY);
 	hasPanoTweak = open != NULL;
 	dlclose(open);
@@ -52,7 +52,7 @@ static BOOL hasPano()
 
 static BOOL hasQRModeTweak()
 {
-	BOOL hasQRMode;
+	BOOL hasQRMode = NO;
 	void *open = dlopen("/Library/MobileSubstrate/DynamicLibraries/QRMode.dylib", RTLD_LAZY);
 	hasQRMode = open != NULL;
 	dlclose(open);
@@ -177,27 +177,32 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 	static NSBundle *bundle = nil;
 	static dispatch_once_t onceToken;
 	dispatch_once(&onceToken, ^{
-		if (isiOS8Up)
+		if (isiOS9Up)
+			dlopen("/System/Library/PrivateFrameworks/CameraUI.framework/CameraUI", RTLD_LAZY);
+		else if (isiOS8)
 			dlopen("/System/Library/PrivateFrameworks/CameraKit.framework/CameraKit", RTLD_LAZY);
 		else
 			dlopen("/System/Library/PrivateFrameworks/PhotoLibrary.framework/PhotoLibrary", RTLD_LAZY);
-		bundle = [NSBundle bundleWithPath:@"/System/Library/PrivateFrameworks/CameraKit.framework"];
-		if (bundle == nil)
-			bundle = [NSBundle bundleWithPath:@"/System/Library/PrivateFrameworks/PhotoLibrary.framework"];
+		bundle = [NSBundle bundleWithPath:@"/System/Library/PrivateFrameworks/CameraUI.framework"];
+		if (bundle == nil) {
+			bundle = [NSBundle bundleWithPath:@"/System/Library/PrivateFrameworks/CameraKit.framework"];
+			if (bundle == nil)
+				bundle = [NSBundle bundleWithPath:@"/System/Library/PrivateFrameworks/PhotoLibrary.framework"];
+		}
 	});
 	return bundle;
 }
 
 - (NSString *)localizedStringForKey:(NSString *)key
 {
-	NSString *table = isiOS8Up ? @"CameraKit" : ([key isEqualToString:@"SLALOM"] ? @"PhotoLibrary-Avalanche" : @"PhotoLibrary");
+	NSString *table = isiOS8Up ? (isiOS9Up ? @"CameraUI" : @"CameraKit") : ([key isEqualToString:@"SLALOM"] ? @"PhotoLibrary-Avalanche" : @"PhotoLibrary");
 	NSString *string = [self.cameraBundle localizedStringForKey:key value:@"" table:table];
 	return [string capitalizedString];
 }
 
 - (NSString *)ModeStringFromCameraMode:(NSNumber *)number
 {
-	NSInteger mode = number.integerValue;
+	int mode = number.intValue;
 	switch (mode) {
 		case cameraModePhoto:
 			return [self localizedStringForKey:@"PHOTO"];
@@ -417,7 +422,6 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 			[_enabledModes removeObject:@(cameraModeBW)];
 			[_disabledModes removeObject:@(cameraModeBW)];
 		}
-
 		[self saveSettings];
 		[[NSUserDefaults standardUserDefaults] synchronize];
 		[self.tableView reloadData];

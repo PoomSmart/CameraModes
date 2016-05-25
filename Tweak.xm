@@ -35,14 +35,12 @@ static NSMutableArray *modesHook(NSArray *modes)
 
 static NSObject <cameraControllerDelegate> *cameraInstance()
 {
-	if (%c(CMKCaptureController))
-		return (CMKCaptureController *)[%c(CMKCaptureController) sharedInstance];
-	else if (%c(CAMCaptureController))
+	if (%c(CAMCaptureController))
 		return (CAMCaptureController *)[%c(CAMCaptureController) sharedInstance];
 	return (PLCameraController *)[%c(PLCameraController) sharedInstance];
 }
 
-static NSInteger effectiveCameraMode(NSInteger origMode)
+static int effectiveCameraMode(int origMode)
 {
 	NSMutableArray *modes = [cameraInstance() supportedCameraModes];
 	if (modes.count == 0)
@@ -50,10 +48,10 @@ static NSInteger effectiveCameraMode(NSInteger origMode)
 	if ([modes containsObject:@(origMode)])
 		return origMode;
 	NSCAssert(modes.count != 0, @"There is no available camera mode.");
-	return ((NSNumber *)modes[0]).integerValue;
+	return ((NSNumber *)modes[0]).intValue;
 }
 
-static NSInteger effectiveCameraMode2(CAMViewfinderViewController *controller, NSInteger origMode)
+static int effectiveCameraMode2(CAMViewfinderViewController *controller, int origMode)
 {
 	NSMutableArray *modes = [controller modesForModeDial:nil];
 	if (modes.count == 0)
@@ -61,7 +59,7 @@ static NSInteger effectiveCameraMode2(CAMViewfinderViewController *controller, N
 	if ([modes containsObject:@(origMode)])
 		return origMode;
 	NSCAssert(modes.count != 0, @"There is no available camera mode.");
-	return ((NSNumber *)modes[0]).integerValue;
+	return ((NSNumber *)modes[0]).intValue;
 }
 
 %group iOS7
@@ -73,7 +71,7 @@ static NSInteger effectiveCameraMode2(CAMViewfinderViewController *controller, N
 	%orig(modesHook(modes));
 }
 
-- (void)_setCameraMode:(NSInteger)mode cameraDevice:(NSInteger)device
+- (void)_setCameraMode:(int)mode cameraDevice:(int)device
 {
 	%orig(effectiveCameraMode(mode), device);
 }
@@ -82,7 +80,7 @@ static NSInteger effectiveCameraMode2(CAMViewfinderViewController *controller, N
 
 %hook PLCameraView
 
-- (void)setCameraMode:(NSInteger)mode
+- (void)setCameraMode:(int)mode
 {
 	%orig(effectiveCameraMode(mode));
 }
@@ -100,7 +98,7 @@ static NSInteger effectiveCameraMode2(CAMViewfinderViewController *controller, N
 	%orig(modesHook(modes));
 }
 
-- (void)_setCameraMode:(NSInteger)mode cameraDevice:(NSInteger)device forceConfigure:(BOOL)force
+- (void)_setCameraMode:(int)mode cameraDevice:(int)device forceConfigure:(BOOL)force
 {
 	%orig(effectiveCameraMode(mode), device, force);
 }
@@ -109,10 +107,9 @@ static NSInteger effectiveCameraMode2(CAMViewfinderViewController *controller, N
 
 %hook CAMCameraView
 
-- (void)setCameraMode:(NSInteger)mode
+- (void)setCameraMode:(int)mode
 {
-	NSInteger effectiveMode = effectiveCameraMode(mode);
-	%orig(effectiveMode);
+	%orig(effectiveCameraMode(mode));
 }
 
 %end
@@ -128,10 +125,9 @@ static NSInteger effectiveCameraMode2(CAMViewfinderViewController *controller, N
 	return modesHook(%orig);
 }
 
-- (void)changeToMode:(NSInteger)mode device:(NSInteger)device animated:(BOOL)animated
+- (void)changeToMode:(int)mode device:(int)device animated:(BOOL)animated
 {
-	NSInteger effectiveMode = effectiveCameraMode2(self, mode);
-	%orig(effectiveMode, device, animated);
+	%orig(effectiveCameraMode2(self, mode), device, animated);
 }
 
 %end
