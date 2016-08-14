@@ -1,14 +1,10 @@
+#define KILL_PROCESS
 #import "Common.h"
 #import <UIKit/UIKit.h>
 #import <Preferences/PSListController.h>
 #import <Preferences/PSSpecifier.h>
 #import <Social/Social.h>
 #import <dlfcn.h>
-
-@interface PSViewController ()
-@property (nonatomic, retain) PSSpecifier *specifier;
-- (void)setView:(id)view;
-@end
 
 @interface CameraModesPreferenceController : PSViewController <UITableViewDataSource, UITableViewDelegate> {
 	NSMutableOrderedSet *_enabledModes;
@@ -34,28 +30,19 @@ static BOOL hasCapability(CFStringRef capability)
 
 static BOOL hasSlomo()
 {
-	BOOL hasSlomoTweak = NO;
-	void *open = dlopen("/Library/MobileSubstrate/DynamicLibraries/SlalomEnabler.dylib", RTLD_LAZY);
-	hasSlomoTweak = open != NULL;
-	dlclose(open);
+	BOOL hasSlomoTweak = fileExist(@"/Library/MobileSubstrate/DynamicLibraries/SlalomEnabler.dylib");
 	return hasSlomoTweak || hasCapability(CFSTR("RearFacingCameraHFRCapability"));
 }
 
 static BOOL hasPano()
 {
-	BOOL hasPanoTweak = NO;
-	void *open = dlopen("/Library/MobileSubstrate/DynamicLibraries/PanoHook.dylib", RTLD_LAZY);
-	hasPanoTweak = open != NULL;
-	dlclose(open);
+	BOOL hasPanoTweak = fileExist(@"/Library/MobileSubstrate/DynamicLibraries/PanoHook.dylib");
 	return hasPanoTweak || hasCapability(CFSTR("PanoramaCameraCapability"));
 }
 
 static BOOL hasQRModeTweak()
 {
-	BOOL hasQRMode = NO;
-	void *open = dlopen("/Library/MobileSubstrate/DynamicLibraries/QRMode.dylib", RTLD_LAZY);
-	hasQRMode = open != NULL;
-	dlclose(open);
+	BOOL hasQRMode = fileExist(@"/Library/MobileSubstrate/DynamicLibraries/QRMode.dylib");
 	return hasQRMode;
 }
 
@@ -87,7 +74,7 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 - (void)setSpecifier:(PSSpecifier *)specifier
 {
 	[super setSpecifier:specifier];
-	self.navigationItem.title = [specifier name];
+	self.navigationItem.title = specifier.name;
 	if ([self isViewLoaded]) {
 		[(UITableView *)self.view setRowHeight:RowHeight];
 		[(UITableView *)self.view reloadData];
@@ -134,7 +121,7 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 		lbl2.backgroundColor = [UIColor clearColor];
 		lbl2.font = [UIFont systemFontOfSize:14.0f];
 		lbl2.textColor = [UIColor grayColor];
-		lbl2.text = @"© 2013 - 2015 Thatchapon Unprasert\n(@PoomSmart)";
+		lbl2.text = @"© 2013 - 2016 Thatchapon Unprasert\n(@PoomSmart)";
 		lbl2.textAlignment = NSTextAlignmentCenter;
 		lbl2.lineBreakMode = NSLineBreakByWordWrapping;
 		lbl2.numberOfLines = 2;
@@ -178,11 +165,11 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 	static dispatch_once_t onceToken;
 	dispatch_once(&onceToken, ^{
 		if (isiOS9Up)
-			dlopen("/System/Library/PrivateFrameworks/CameraUI.framework/CameraUI", RTLD_LAZY);
+			openCamera9();
 		else if (isiOS8)
-			dlopen("/System/Library/PrivateFrameworks/CameraKit.framework/CameraKit", RTLD_LAZY);
+			openCamera8();
 		else
-			dlopen("/System/Library/PrivateFrameworks/PhotoLibrary.framework/PhotoLibrary", RTLD_LAZY);
+			openCamera7();
 		bundle = [NSBundle bundleWithPath:@"/System/Library/PrivateFrameworks/CameraUI.framework"];
 		if (bundle == nil) {
 			bundle = [NSBundle bundleWithPath:@"/System/Library/PrivateFrameworks/CameraKit.framework"];
@@ -281,7 +268,6 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 			break;
 		case 2:
 			cell.textLabel.text = [self ModeStringFromCameraMode:_disabledModes[indexPath.row]];
-			break;
 	}
 	return cell;
 }
@@ -314,7 +300,7 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 {
 	#pragma GCC diagnostic push
 	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-	system("killall Camera");
+	killProcess("Camera");
 	#pragma GCC diagnostic pop
 	NSMutableDictionary *prefDict = [NSMutableDictionary dictionary];
 	[prefDict addEntriesFromDictionary:[NSDictionary dictionaryWithContentsOfFile:PREF_PATH]];
@@ -390,9 +376,8 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 - (void)love
 {
 	SLComposeViewController *twitter = [[SLComposeViewController composeViewControllerForServiceType:SLServiceTypeTwitter] retain];
-	[twitter setInitialText:@"#CameraModes by @PoomSmart is awesome!"];
-	if (twitter != nil)
-		[[self navigationController] presentViewController:twitter animated:YES completion:nil];
+	twitter.initialText = @"#CameraModes by @PoomSmart is really awesome!";
+	[self.navigationController presentViewController:twitter animated:YES completion:nil];
 	[twitter release];
 }
 

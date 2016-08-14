@@ -1,11 +1,11 @@
-TARGET = iphone:latest:8.0
-ARCHS = armv7 arm64
+GO_EASY_ON_ME = 1
+DEBUG = 0
+PACKAGE_VERSION = 1.1.4
 
 include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = CameraModes
 CameraModes_FILES = Tweak.xm
-CameraModes_LDFLAGS += -Wl,-segalign,4000
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 
@@ -14,7 +14,7 @@ CameraModesSettings_FILES = CameraModesPreferenceController.m
 CameraModesSettings_INSTALL_PATH = /Library/PreferenceBundles
 CameraModesSettings_PRIVATE_FRAMEWORKS = Preferences
 CameraModesSettings_LIBRARIES = MobileGestalt
-CameraModesSettings_FRAMEWORKS = CoreGraphics Social UIKit
+CameraModesSettings_FRAMEWORKS = Social
 
 include $(THEOS_MAKE_PATH)/bundle.mk
 
