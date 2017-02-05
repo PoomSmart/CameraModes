@@ -57,17 +57,29 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 - (NSMutableArray *)defaultCameraModes
 {
 	NSMutableArray *array = [NSMutableArray array];
-	if (isiOS8Up)
+	if (isiOS10Up) {
+		if (MGGetBoolAnswer(CFSTR("YzrS+WPEMqyh/FBv/n/jvA")))
+			[array addObject:@(cameraModePortrait)];
+		if (hasSlomo())
+			[array addObject:@(cameraModeSlalom)];
+		[array addObject:@(cameraModeVideo)];
+		[array addObject:@(cameraModePhoto)];
 		[array addObject:@(cameraModeTimeLapse)];
-	if (hasSlomo())
-		[array addObject:@(cameraModeSlalom)];
-	[array addObject:@(cameraModeVideo)];
-	[array addObject:@(cameraModePhoto)];
-	[array addObject:@(cameraModeSquare)];
-	if (hasPano())
+		[array addObject:@(cameraModeSquare)];
 		[array addObject:@(cameraModePano)];
-	if (hasQRModeTweak())
-		[array addObject:@(cameraModeBW)];
+	} else {
+		if (isiOS8Up)
+			[array addObject:@(cameraModeTimeLapse)];
+		if (hasSlomo())
+			[array addObject:@(cameraModeSlalom)];
+		[array addObject:@(cameraModeVideo)];
+		[array addObject:@(cameraModePhoto)];
+		[array addObject:@(cameraModeSquare)];
+		if (hasPano())
+			[array addObject:@(cameraModePano)];
+		if (hasQRModeTweak())
+			[array addObject:@(cameraModeBW)];
+	}
 	return array;
 }
 
@@ -121,7 +133,7 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 		lbl2.backgroundColor = [UIColor clearColor];
 		lbl2.font = [UIFont systemFontOfSize:14.0f];
 		lbl2.textColor = [UIColor grayColor];
-		lbl2.text = @"© 2013 - 2016 Thatchapon Unprasert\n(@PoomSmart)";
+		lbl2.text = @"© 2013 - 2017 Thatchapon Unprasert\n(@PoomSmart)";
 		lbl2.textAlignment = NSTextAlignmentCenter;
 		lbl2.lineBreakMode = NSLineBreakByWordWrapping;
 		lbl2.numberOfLines = 2;
@@ -182,7 +194,17 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 
 - (NSString *)localizedStringForKey:(NSString *)key
 {
-	NSString *table = isiOS8Up ? (isiOS9Up ? @"CameraUI" : @"CameraKit") : ([key isEqualToString:@"SLALOM"] ? @"PhotoLibrary-Avalanche" : @"PhotoLibrary");
+	NSString *table = nil;
+	if (isiOS9Up)
+		table = [key isEqualToString:@"PORTRAIT"] ? @"CameraUI-bravo" : @"CameraUI";
+	else if (isiOS8)
+		table = @"CameraKit";
+	else {
+		if ([key isEqualToString:@"SLALOM"])
+		 	table = @"PhotoLibrary-Avalanche";
+		else
+			table = @"PhotoLibrary";
+	}
 	NSString *string = [self.cameraBundle localizedStringForKey:key value:@"" table:table];
 	return [string capitalizedString];
 }
@@ -202,7 +224,7 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue)
 		case cameraModeSquare:
 			return [self localizedStringForKey:@"SQUARE"];
 		case cameraModeBW:
-			return [self nameForModeFive];
+			return isiOS9Up ? [self localizedStringForKey:@"PORTRAIT"] : [self nameForModeFive];
 		case cameraModeTimeLapse:
 			return [self localizedStringForKey:@"TIMELAPSE"];
 	}

@@ -15,3 +15,4 @@ typedef NS_ENUM(int, cameraMode) {
 	cameraModeBW,
 	cameraModeTimeLapse
 };
+#define cameraModePortrait cameraModeBW

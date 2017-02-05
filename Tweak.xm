@@ -16,6 +16,11 @@ Camera modes : 6, 2, 1, 0, 4, 3, (5)
 	5 - Unknown (is B&W but does nothing) (This mode is used by QR Mode tweak)
 */
 
+/*
+Camera modes (iOS 10): 5, 2, 1, 0, 6, 4, 3
+	Almost all are the same, but 5 now represents the portrait mode
+*/
+
 static NSMutableArray *modesHook(NSArray *modes)
 {
 	if (!tweakEnabled)

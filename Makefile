@@ -1,6 +1,6 @@
 GO_EASY_ON_ME = 1
-DEBUG = 0
-PACKAGE_VERSION = 1.1.4
+DEBUG = 1
+PACKAGE_VERSION = 1.1.5
 
 include $(THEOS)/makefiles/common.mk
 
