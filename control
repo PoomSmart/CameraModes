@@ -1,5 +1,5 @@
 Package: org.thebigboss.cameramodes
-Name: CameraModes (Debug)
+Name: CameraModes
 Conflicts: org.thebigboss.nosquare
 Depends: mobilesubstrate, preferenceloader, firmware (>= 7.0)
 Version: 1.1
