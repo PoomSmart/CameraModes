@@ -6,13 +6,24 @@ NSString *kEnabledModesKey = @"EnabledModes";
 NSString *kDisabledModesKey = @"DisabledModes";
 
 // camera modes
-typedef NS_ENUM(int, cameraMode) {
-	cameraModePhoto,
-	cameraModeVideo,
-	cameraModeSlalom,
-	cameraModePano,
-	cameraModeSquare,
-	cameraModeBW,
-	cameraModeTimeLapse
+// pre-iOS 10
+typedef NS_ENUM (int, cameraMode) {
+    cameraModePhoto = 0,
+    cameraModeVideo,
+    cameraModeSlalom,
+    cameraModePano,
+    cameraModeSquare,
+    cameraModeBW,
+    cameraModeTimeLapse
 };
-#define cameraModePortrait cameraModeBW
+
+// iOS 10
+typedef NS_ENUM (int, cameraMode2) {
+    cameraModePhoto2 = 0,
+    cameraModeVideo2,
+    cameraModeSlalom2,
+    cameraModePano2,
+    cameraModeSquare2,
+    cameraModeTimeLapse2,
+    cameraModePortrait2
+};
