@@ -1,9 +1,12 @@
-Package: org.thebigboss.cameramodes
+Package: com.ps.cameramodes
 Name: CameraModes
-Conflicts: org.thebigboss.nosquare
-Depends: mobilesubstrate, preferenceloader, firmware (>= 7.0)
-Version: 1.1
+Conflicts: org.thebigboss.cameramodes
+Replaces: org.thebigboss.cameramodes
+Provides: org.thebigboss.cameramodes
+Depends: mobilesubstrate, preferenceloader, firmware (>= 14.0)
+Version: 1.0
 Architecture: iphoneos-arm
-Description: Specific available camera modes.
+Description: Specify available camera modes.
 Author: PoomSmart
+Maintainer: PoomSmart
 Section: Tweaks

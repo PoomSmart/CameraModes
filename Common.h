@@ -1,29 +1,19 @@
-#import "../PS.h"
+#define UNRESTRICTED_AVAILABILITY
+#import <PSHeader/CameraApp/CameraApp.h>
+#import <PSHeader/CameraMacros.h>
+#import <PSHeader/Misc.h>
 
-NSString *PREF_PATH = @"/var/mobile/Library/Preferences/com.PS.CameraModes.plist";
-CFStringRef PreferencesNotification = CFSTR("com.PS.CameraModes.prefs");
+#define PREF_PATH ROOT_PATH_NS(@"/var/mobile/Library/Preferences/com.ps.cameramodes.plist")
 NSString *kEnabledModesKey = @"EnabledModes";
 NSString *kDisabledModesKey = @"DisabledModes";
 
-// camera modes
-// pre-iOS 10
 typedef NS_ENUM (int, cameraMode) {
     cameraModePhoto = 0,
     cameraModeVideo,
     cameraModeSlalom,
     cameraModePano,
     cameraModeSquare,
-    cameraModeBW,
-    cameraModeTimeLapse
-};
-
-// iOS 10
-typedef NS_ENUM (int, cameraMode2) {
-    cameraModePhoto2 = 0,
-    cameraModeVideo2,
-    cameraModeSlalom2,
-    cameraModePano2,
-    cameraModeSquare2,
-    cameraModeTimeLapse2,
-    cameraModePortrait2
+    cameraModeTimeLapse,
+    cameraModePortrait,
+    cameraModeCinematic
 };

@@ -1,9 +1,7 @@
-#define KILL_PROCESS
 #import "Common.h"
 #import <UIKit/UIKit.h>
 #import <Preferences/PSListController.h>
 #import <Preferences/PSSpecifier.h>
-#import <Social/Social.h>
 #import <dlfcn.h>
 
 @interface CameraModesPreferenceController : PSViewController <UITableViewDataSource, UITableViewDelegate> {
@@ -22,26 +20,6 @@
 
 #define RowHeight 44.0f
 
-extern BOOL MGGetBoolAnswer(CFStringRef);
-static BOOL hasCapability(CFStringRef capability){
-    return MGGetBoolAnswer(capability);
-}
-
-static BOOL hasSlomo(){
-    BOOL hasSlomoTweak = fileExist(@"/Library/MobileSubstrate/DynamicLibraries/SlalomEnabler.dylib");
-    return hasSlomoTweak || hasCapability(CFSTR("RearFacingCameraHFRCapability"));
-}
-
-static BOOL hasPano(){
-    BOOL hasPanoTweak = fileExist(@"/Library/MobileSubstrate/DynamicLibraries/PanoHook.dylib");
-    return hasPanoTweak || hasCapability(CFSTR("PanoramaCameraCapability"));
-}
-
-static BOOL hasQRModeTweak(){
-    BOOL hasQRMode = fileExist(@"/Library/MobileSubstrate/DynamicLibraries/QRMode.dylib");
-    return hasQRMode;
-}
-
 static BOOL boolValueForKey(NSString *key, BOOL defaultValue){
     NSDictionary *pref = [NSDictionary dictionaryWithContentsOfFile:PREF_PATH];
     return pref[key] ? [pref[key] boolValue] : defaultValue;
@@ -51,29 +29,14 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue){
 
 - (NSMutableArray *)defaultCameraModes {
     NSMutableArray *array = [NSMutableArray array];
-    if (isiOS10Up) {
-        [array addObject:@(cameraModeTimeLapse2)];
-        if (hasSlomo())
-            [array addObject:@(cameraModeSlalom2)];
-        [array addObject:@(cameraModeVideo2)];
-        [array addObject:@(cameraModePhoto2)];
-        if (MGGetBoolAnswer(CFSTR("YzrS+WPEMqyh/FBv/n/jvA")))
-            [array addObject:@(cameraModePortrait2)];
-        [array addObject:@(cameraModeSquare2)];
-        [array addObject:@(cameraModePano2)];
-    } else {
-        if (isiOS8Up)
-            [array addObject:@(cameraModeTimeLapse)];
-        if (hasSlomo())
-            [array addObject:@(cameraModeSlalom)];
-        [array addObject:@(cameraModeVideo)];
-        [array addObject:@(cameraModePhoto)];
-        [array addObject:@(cameraModeSquare)];
-        if (hasPano())
-            [array addObject:@(cameraModePano)];
-        if (hasQRModeTweak())
-            [array addObject:@(cameraModeBW)];
-    }
+    [array addObject:@(cameraModeTimeLapse)];
+    [array addObject:@(cameraModeSlalom)];
+    [array addObject:@(cameraModeCinematic)];
+    [array addObject:@(cameraModeVideo)];
+    [array addObject:@(cameraModePhoto)];
+    [array addObject:@(cameraModePortrait)];
+    [array addObject:@(cameraModeSquare)];
+    [array addObject:@(cameraModePano)];
     return array;
 }
 
@@ -81,8 +44,8 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue){
     [super setSpecifier:specifier];
     self.navigationItem.title = specifier.name;
     if ([self isViewLoaded]) {
-        [(UITableView *) self.view setRowHeight:RowHeight];
-        [(UITableView *) self.view reloadData];
+        [(UITableView *)self.view setRowHeight:RowHeight];
+        [(UITableView *)self.view reloadData];
     }
 }
 
@@ -112,7 +75,7 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue){
 
 - (UIView *)tableView:(UITableView *)tableView viewForFooterInSection:(NSInteger)section {
     if (section == [self numberOfSectionsInTableView:tableView] - 1) {
-        UIView *footer2 = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 320, 90)] autorelease];
+        UIView *footer2 = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 320, 90)];
         footer2.autoresizingMask = UIViewAutoresizingFlexibleWidth;
         footer2.backgroundColor = [UIColor clearColor];
 
@@ -120,13 +83,12 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue){
         lbl2.backgroundColor = [UIColor clearColor];
         lbl2.font = [UIFont systemFontOfSize:14.0f];
         lbl2.textColor = [UIColor grayColor];
-        lbl2.text = @"© 2013 - 2017 Thatchapon Unprasert\n(@PoomSmart)";
+        lbl2.text = @"© 2013 - 2024 PoomSmart";
         lbl2.textAlignment = NSTextAlignmentCenter;
         lbl2.lineBreakMode = NSLineBreakByWordWrapping;
         lbl2.numberOfLines = 2;
         lbl2.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin;
         [footer2 addSubview:lbl2];
-        [lbl2 release];
         return footer2;
     }
     return nil;
@@ -148,58 +110,24 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue){
     return 1;
 }
 
-- (NSString *)nameForModeFive {
-    if (hasQRModeTweak())
-        return @"QR Mode";
-    return @"Mode 5";
-}
-
 - (NSBundle *)cameraBundle {
     static NSBundle *bundle = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        if (isiOS9Up)
-            openCamera9();
-        else if (isiOS8)
-            openCamera8();
-        else
-            openCamera7();
+        openCamera10();
         bundle = [NSBundle bundleWithPath:@"/System/Library/PrivateFrameworks/CameraUI.framework"];
-        if (bundle == nil) {
-            bundle = [NSBundle bundleWithPath:@"/System/Library/PrivateFrameworks/CameraKit.framework"];
-            if (bundle == nil)
-                bundle = [NSBundle bundleWithPath:@"/System/Library/PrivateFrameworks/PhotoLibrary.framework"];
-        }
     });
     return bundle;
 }
 
 - (NSString *)localizedStringForKey:(NSString *)key {
-    NSString *table = nil;
-    if (isiOS9Up)
-        table = [key isEqualToString:@"PORTRAIT"] ? @"CameraUI-bravo" : @"CameraUI";
-    else if (isiOS8)
-        table = @"CameraKit";
-    else {
-        if ([key isEqualToString:@"SLALOM"])
-            table = @"PhotoLibrary-Avalanche";
-        else
-            table = @"PhotoLibrary";
-    }
+    NSString *table = [key isEqualToString:@"PORTRAIT"] ? @"CameraUI-bravo" : @"CameraUI";
     NSString *string = [self.cameraBundle localizedStringForKey:key value:@"" table:table];
     return [string capitalizedString];
 }
 
 - (NSString *)ModeStringFromCameraMode:(NSNumber *)number {
     int mode = number.intValue;
-    if (isiOS10Up) {
-        switch (mode) {
-            case cameraModePortrait2:
-                return [self localizedStringForKey:@"PORTRAIT"];
-            case cameraModeTimeLapse2:
-                return [self localizedStringForKey:@"TIMELAPSE"];
-        }
-    }
     switch (mode) {
         case cameraModePhoto:
             return [self localizedStringForKey:@"PHOTO"];
@@ -211,10 +139,12 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue){
             return [self localizedStringForKey:@"PANO"];
         case cameraModeSquare:
             return [self localizedStringForKey:@"SQUARE"];
-        case cameraModeBW:
-            return [self nameForModeFive];
         case cameraModeTimeLapse:
             return [self localizedStringForKey:@"TIMELAPSE"];
+        case cameraModePortrait:
+            return [self localizedStringForKey:@"PORTRAIT"];
+        case cameraModeCinematic:
+            return [self localizedStringForKey:@"CINEMATIC"];
     }
     return nil;
 }
@@ -224,7 +154,6 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue){
     [prefDict addEntriesFromDictionary:[NSDictionary dictionaryWithContentsOfFile:PREF_PATH]];
     prefDict[@"tweakEnabled"] = @(sender.on);
     [prefDict.copy writeToFile:PREF_PATH atomically:YES];
-    CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), PreferencesNotification, NULL, NULL, YES);
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -234,25 +163,24 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue){
     if (section == 0) {
         cell = [tableView dequeueReusableCellWithIdentifier:@"SwitchCell"];
         if (cell == nil) {
-                        #pragma GCC diagnostic push
-                        #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-            cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:@"SwitchCell"] autorelease];
-                        #pragma GCC diagnostic pop
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+            cell = [[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:@"SwitchCell"];
+#pragma GCC diagnostic pop
             cell.textLabel.text = @"Enable Tweak";
             UISwitch *toggle = [[UISwitch alloc] initWithFrame:CGRectZero];
             [toggle addTarget:self action:@selector(toggleSwitch:) forControlEvents:UIControlEventValueChanged];
             toggle.on = boolValueForKey(@"tweakEnabled", YES);
             cell.accessoryView = toggle;
-            [toggle release];
         }
         return cell;
     } else if (section == 3) {
         cell = [tableView dequeueReusableCellWithIdentifier:@"ResetCell"];
         if (cell == nil) {
-                        #pragma GCC diagnostic push
-                        #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-            cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:@"ResetCell"] autorelease];
-                        #pragma GCC diagnostic pop
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+            cell = [[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:@"ResetCell"];
+#pragma GCC diagnostic pop
             cell.textLabel.text = @"Reset modes";
             cell.textLabel.textColor = [UIColor systemBlueColor];
             cell.textLabel.textAlignment = NSTextAlignmentCenter;
@@ -261,13 +189,12 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue){
     }
     cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier];
     if (cell == nil) {
-                #pragma GCC diagnostic push
-                #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-        cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:CellIdentifier] autorelease];
-                #pragma GCC diagnostic pop
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+        cell = [[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:CellIdentifier];
+#pragma GCC diagnostic pop
         cell.textLabel.numberOfLines = 1;
         cell.textLabel.backgroundColor = [UIColor clearColor];
-        cell.textLabel.textColor = [UIColor blackColor];
     }
     switch (section) {
         case 1:
@@ -301,16 +228,11 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue){
 }
 
 - (void)saveSettings {
-        #pragma GCC diagnostic push
-        #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-    killProcess("Camera");
-        #pragma GCC diagnostic pop
     NSMutableDictionary *prefDict = [NSMutableDictionary dictionary];
     [prefDict addEntriesFromDictionary:[NSDictionary dictionaryWithContentsOfFile:PREF_PATH]];
     prefDict[kEnabledModesKey] = _enabledModes.array;
     prefDict[kDisabledModesKey] = _disabledModes.array;
     [prefDict.copy writeToFile:PREF_PATH atomically:YES];
-    CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), PreferencesNotification, NULL, NULL, YES);
 }
 
 - (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -331,19 +253,19 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue){
     if (fromIndexPath.row == toIndexPath.row && fromIndexPath.section == toIndexPath.section)
         return;
     if (fromIndexPath.section == 1 && toIndexPath.section == 1) {
-        NSObject *o = [_enabledModes[fromIndexPath.row] retain];
+        NSObject *o = _enabledModes[fromIndexPath.row];
         [_enabledModes removeObjectAtIndex:fromIndexPath.row];
         [_enabledModes insertObject:o atIndex:toIndexPath.row];
     } else if (fromIndexPath.section == 2 && toIndexPath.section == 2) {
-        NSObject *o = [_disabledModes[fromIndexPath.row] retain];
+        NSObject *o = _disabledModes[fromIndexPath.row];
         [_disabledModes removeObjectAtIndex:fromIndexPath.row];
         [_disabledModes insertObject:o atIndex:toIndexPath.row];
     } else if (fromIndexPath.section == 1 && toIndexPath.section == 2) {
-        NSObject *o = [_enabledModes[fromIndexPath.row] retain];
+        NSObject *o = _enabledModes[fromIndexPath.row];
         [_enabledModes removeObjectAtIndex:fromIndexPath.row];
         [_disabledModes insertObject:o atIndex:toIndexPath.row];
     } else if (fromIndexPath.section == 2 && toIndexPath.section == 1) {
-        NSObject *o = [_disabledModes[fromIndexPath.row] retain];
+        NSObject *o = _disabledModes[fromIndexPath.row];
         [_disabledModes removeObjectAtIndex:fromIndexPath.row];
         [_enabledModes insertObject:o atIndex:toIndexPath.row];
     }
@@ -364,24 +286,11 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue){
     tableView.delegate = self;
     tableView.rowHeight = RowHeight;
     self.view = tableView;
-    [tableView release];
-}
-
-- (void)love {
-    SLComposeViewController *twitter = [[SLComposeViewController composeViewControllerForServiceType:SLServiceTypeTwitter] retain];
-    twitter.initialText = @"#CameraModes by @PoomSmart is really awesome!";
-    [self.navigationController presentViewController:twitter animated:YES completion:nil];
-    [twitter release];
 }
 
 - (instancetype)init {
     self = [super init];
     if (self) {
-        UIButton *heart = [[[UIButton alloc] initWithFrame:CGRectZero] autorelease];
-        [heart setImage:[UIImage imageNamed:@"Heart" inBundle:[NSBundle bundleWithPath:@"/Library/PreferenceBundles/CameraModesSettings.bundle"]] forState:UIControlStateNormal];
-        [heart sizeToFit];
-        [heart addTarget:self action:@selector(love) forControlEvents:UIControlEventTouchUpInside];
-        self.navigationItem.rightBarButtonItem = [[[UIBarButtonItem alloc] initWithCustomView:heart] autorelease];
         NSDictionary *prefDict = [NSDictionary dictionaryWithContentsOfFile:PREF_PATH];
         _enabledModes = prefDict[kEnabledModesKey] != nil ?
                         [NSMutableOrderedSet orderedSetWithArray:prefDict[kEnabledModesKey]] :
@@ -390,15 +299,6 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue){
                          [NSMutableOrderedSet orderedSetWithArray:prefDict[kDisabledModesKey]] :
                          [NSMutableOrderedSet orderedSetWithArray:[NSArray array]];
 
-        if (hasQRModeTweak()) {
-            // fix QRMode not appearing for users who updated from a previous version of CameraModes
-            if (!([_enabledModes containsObject:@(cameraModeBW)] || [_disabledModes containsObject:@(cameraModeBW)]))
-                [_enabledModes addObject:@(cameraModeBW)];
-        } else {
-            // remove it if qrmode was uninstalled
-            [_enabledModes removeObject:@(cameraModeBW)];
-            [_disabledModes removeObject:@(cameraModeBW)];
-        }
         [self saveSettings];
         [[NSUserDefaults standardUserDefaults] synchronize];
         [self.tableView reloadData];
