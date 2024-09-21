@@ -1,8 +1,5 @@
 #import "Common.h"
 
-BOOL tweakEnabled;
-BOOL QRModeEnabled;
-
 NSMutableArray *enabledModes;
 
 /*
@@ -32,7 +29,7 @@ static NSMutableArray *modesHook(NSArray *modes) {
     NSMutableArray *newModes = [NSMutableArray arrayWithArray:modes];
     NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:PREF_PATH];
     NSMutableArray *enabledModes = [NSMutableArray arrayWithArray:prefs[kEnabledModesKey]];
-    [enabledModes filterUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(id  _Nullable evaluatedObject, NSDictionary<NSString *,id> * _Nullable bindings) {
+    [enabledModes filterUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(id evaluatedObject, NSDictionary <NSString *, id> * bindings) {
         return [newModes containsObject:evaluatedObject];
     }]];
 
@@ -40,7 +37,7 @@ static NSMutableArray *modesHook(NSArray *modes) {
     return shouldUse ? enabledModes : newModes;
 }
 
-static NSInteger effectiveCameraMode(CAMViewfinderViewController *controller, NSInteger origMode){
+static NSInteger effectiveCameraMode(CAMViewfinderViewController *controller, NSInteger origMode) {
     NSMutableArray *modes = [controller modesForModeDial:nil];
     if (modes.count == 0)
         return origMode;
@@ -62,15 +59,10 @@ static NSInteger effectiveCameraMode(CAMViewfinderViewController *controller, NS
 
 %end
 
-static void reloadSettings(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo){
-    CFPreferencesAppSynchronize(CFSTR("com.ps.cameramodes"));
+%ctor {
     NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:PREF_PATH];
     id val = prefs[@"tweakEnabled"];
-    tweakEnabled = val ? [val boolValue] : YES;
-}
-
-%ctor {
-    reloadSettings(NULL, NULL, NULL, NULL, NULL);
+    BOOL tweakEnabled = val ? [val boolValue] : YES;
     if (!tweakEnabled) return;
     %init;
 }

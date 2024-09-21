@@ -8,19 +8,12 @@
     NSMutableOrderedSet *_enabledModes;
     NSMutableOrderedSet *_disabledModes;
 }
-@property (nonatomic, retain) PSSpecifier *timelapseSpec;
-@property (nonatomic, retain) PSSpecifier *slomoSpec;
-@property (nonatomic, retain) PSSpecifier *videoSpec;
-@property (nonatomic, retain) PSSpecifier *photoSpec;
-@property (nonatomic, retain) PSSpecifier *squareSpec;
-@property (nonatomic, retain) PSSpecifier *panoSpec;
-@property (nonatomic, retain) PSSpecifier *modeFiveSpec;
 - (UITableView *)tableView;
 @end
 
 #define RowHeight 44.0f
 
-static BOOL boolValueForKey(NSString *key, BOOL defaultValue){
+static BOOL boolValueForKey(NSString *key, BOOL defaultValue) {
     NSDictionary *pref = [NSDictionary dictionaryWithContentsOfFile:PREF_PATH];
     return pref[key] ? [pref[key] boolValue] : defaultValue;
 }
@@ -126,7 +119,7 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue){
     return [string capitalizedString];
 }
 
-- (NSString *)ModeStringFromCameraMode:(NSNumber *)number {
+- (NSString *)modeStringFromCameraMode:(NSNumber *)number {
     int mode = number.intValue;
     switch (mode) {
         case cameraModePhoto:
@@ -163,11 +156,8 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue){
     if (section == 0) {
         cell = [tableView dequeueReusableCellWithIdentifier:@"SwitchCell"];
         if (cell == nil) {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-            cell = [[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:@"SwitchCell"];
-#pragma GCC diagnostic pop
-            cell.textLabel.text = @"Enable Tweak";
+            cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"SwitchCell"];
+            cell.textLabel.text = @"Enabled";
             UISwitch *toggle = [[UISwitch alloc] initWithFrame:CGRectZero];
             [toggle addTarget:self action:@selector(toggleSwitch:) forControlEvents:UIControlEventValueChanged];
             toggle.on = boolValueForKey(@"tweakEnabled", YES);
@@ -177,10 +167,7 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue){
     } else if (section == 3) {
         cell = [tableView dequeueReusableCellWithIdentifier:@"ResetCell"];
         if (cell == nil) {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-            cell = [[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:@"ResetCell"];
-#pragma GCC diagnostic pop
+            cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"ResetCell"];
             cell.textLabel.text = @"Reset modes";
             cell.textLabel.textColor = [UIColor systemBlueColor];
             cell.textLabel.textAlignment = NSTextAlignmentCenter;
@@ -189,19 +176,16 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue){
     }
     cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier];
     if (cell == nil) {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-        cell = [[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:CellIdentifier];
-#pragma GCC diagnostic pop
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier];
         cell.textLabel.numberOfLines = 1;
         cell.textLabel.backgroundColor = [UIColor clearColor];
     }
     switch (section) {
         case 1:
-            cell.textLabel.text = [self ModeStringFromCameraMode:_enabledModes[indexPath.row]];
+            cell.textLabel.text = [self modeStringFromCameraMode:_enabledModes[indexPath.row]];
             break;
         case 2:
-            cell.textLabel.text = [self ModeStringFromCameraMode:_disabledModes[indexPath.row]];
+            cell.textLabel.text = [self modeStringFromCameraMode:_disabledModes[indexPath.row]];
     }
     return cell;
 }
@@ -292,12 +276,12 @@ static BOOL boolValueForKey(NSString *key, BOOL defaultValue){
     self = [super init];
     if (self) {
         NSDictionary *prefDict = [NSDictionary dictionaryWithContentsOfFile:PREF_PATH];
-        _enabledModes = prefDict[kEnabledModesKey] != nil ?
-                        [NSMutableOrderedSet orderedSetWithArray:prefDict[kEnabledModesKey]] :
-                        [NSMutableOrderedSet orderedSetWithArray:[self defaultCameraModes]];
-        _disabledModes = prefDict[kDisabledModesKey] != nil ?
-                         [NSMutableOrderedSet orderedSetWithArray:prefDict[kDisabledModesKey]] :
-                         [NSMutableOrderedSet orderedSetWithArray:[NSArray array]];
+        _enabledModes = prefDict[kEnabledModesKey]
+                            ? [NSMutableOrderedSet orderedSetWithArray:prefDict[kEnabledModesKey]]
+                            : [NSMutableOrderedSet orderedSetWithArray:[self defaultCameraModes]];
+        _disabledModes = prefDict[kDisabledModesKey]
+                            ? [NSMutableOrderedSet orderedSetWithArray:prefDict[kDisabledModesKey]]
+                            : [NSMutableOrderedSet orderedSetWithArray:[NSArray array]];
 
         [self saveSettings];
         [[NSUserDefaults standardUserDefaults] synchronize];

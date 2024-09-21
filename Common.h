@@ -7,7 +7,7 @@
 NSString *kEnabledModesKey = @"EnabledModes";
 NSString *kDisabledModesKey = @"DisabledModes";
 
-typedef NS_ENUM (int, cameraMode) {
+typedef NS_ENUM(int, cameraMode) {
     cameraModePhoto = 0,
     cameraModeVideo,
     cameraModeSlalom,
