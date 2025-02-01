@@ -3,7 +3,7 @@ Name: CameraModes
 Conflicts: org.thebigboss.cameramodes
 Replaces: org.thebigboss.cameramodes
 Provides: org.thebigboss.cameramodes
-Depends: mobilesubstrate, preferenceloader, firmware (>= 14.0)
+Depends: mobilesubstrate, preferenceloader, firmware (>= 11.0)
 Version: 1.0
 Architecture: iphoneos-arm
 Description: Specify available camera modes.
